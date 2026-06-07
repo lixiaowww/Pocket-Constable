@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { 
   Download, 
   Settings, 
@@ -14,11 +14,47 @@ import {
   VolumeX,
   Sun,
   SmartphoneNfc,
-  CheckCircle2
+  CheckCircle2,
+  Key,
+  Copy,
+  Check,
+  AlertTriangle,
+  RefreshCw
 } from "lucide-react";
 import { SAMPLE_SHORTCUT_CODE, REAL_SHORTCUT_I_CLOUD_LINK } from "../data";
 
 export default function ShortcutIntroSection() {
+  const [buyerKey, setBuyerKey] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleVerifyKey = async () => {
+    if (!buyerKey.trim()) return;
+    setIsValidating(true);
+    setVerificationResult(null);
+    try {
+      const res = await fetch(`/api/validate?key=${encodeURIComponent(buyerKey.trim())}&device_id=网页验证端-iPhone`);
+      const data = await res.json();
+      setVerificationResult(data);
+    } catch (e) {
+      setVerificationResult({
+        valid: false,
+        reason: "无法连接验证服务器，请检查网络或部署状态。"
+      });
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const validationUrl = `${window.location.protocol}//${window.location.host}/api/validate?key=${encodeURIComponent(buyerKey.trim())}`;
+
+  const copyValidationUrl = () => {
+    navigator.clipboard.writeText(validationUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="space-y-6">
       {/* Title */}
@@ -118,6 +154,102 @@ export default function ShortcutIntroSection() {
           </div>
         </div>
 
+      </div>
+
+      {/* Buyer Self-Service Verification & Binding Portal */}
+      <div className="bg-[#FAF9F5] border border-black p-6 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] space-y-4">
+        <div className="flex items-center gap-2 border-b border-black/10 pb-3">
+          <Key className="w-5 h-5 text-stone-900" />
+          <h3 className="text-sm font-serif font-black text-stone-950 uppercase tracking-wide">
+            买家卡密自助激活与接口绑定工具
+          </h3>
+        </div>
+        <p className="text-xs text-stone-600 leading-relaxed font-sans">
+          如果您从小红书商家处购买了本指令包的卡密，可以在下方验证您的卡密状态，并直接复制专属接口地址绑定到您的 iPhone 快捷指令中。
+        </p>
+
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              placeholder="请输入您的激活卡密 (格式如: SHC-...)"
+              value={buyerKey}
+              onChange={(e) => setBuyerKey(e.target.value)}
+              className="flex-1 p-2.5 bg-white border border-stone-400 text-xs font-mono tracking-wider focus:outline-none"
+            />
+            <button
+              onClick={handleVerifyKey}
+              disabled={isValidating || !buyerKey.trim()}
+              className="py-2.5 px-6 bg-black hover:bg-neutral-900 text-white text-xs font-serif font-bold tracking-widest uppercase rounded-sm flex items-center justify-center gap-2 transition duration-150 cursor-pointer disabled:opacity-50"
+            >
+              {isValidating ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>查询中...</span>
+                </>
+              ) : (
+                <span>验证卡密</span>
+              )}
+            </button>
+          </div>
+
+          {verificationResult && (
+            <div className={`p-4 border rounded-sm text-xs font-mono leading-relaxed space-y-3 animate-fadeIn ${
+              verificationResult.valid 
+                ? "bg-emerald-50 border-emerald-300 text-emerald-900" 
+                : "bg-red-50 border-red-300 text-red-950"
+            }`}>
+              <div className="flex items-center justify-between font-bold border-b border-black/5 pb-1.5 mb-1.5 uppercase">
+                <span className="flex items-center gap-1">
+                  {verificationResult.valid ? "✅ 验证通过 (ACTIVE)" : "❌ 验证失败 (EXPIRED_OR_INVALID)"}
+                </span>
+                <span className="text-[9.5px] px-1 py-0.5 rounded bg-black/5">
+                  云端实时计算
+                </span>
+              </div>
+
+              {verificationResult.valid ? (
+                <div className="space-y-2">
+                  <p><strong>截止有效期：</strong> <span className="underline">{verificationResult.expires_at}</span></p>
+                  <p className="text-[11px] text-stone-700 leading-normal font-sans">
+                    卡密验证成功！请复制下方您的<strong>专属校验接口地址</strong>，并在 iPhone 快捷指令“获取 URL 内容”步骤中粘贴它：
+                  </p>
+                  
+                  {/* Dynamic Copy URL field */}
+                  <div className="flex gap-2 pt-1">
+                    <input
+                      type="text"
+                      readOnly
+                      value={validationUrl}
+                      className="flex-1 p-2 bg-white border border-emerald-300 text-xs font-mono text-stone-900 focus:outline-none"
+                    />
+                    <button
+                      onClick={copyValidationUrl}
+                      className="px-4 bg-[#007AFF] hover:bg-[#0062CC] text-white text-xs rounded-sm transition flex items-center justify-center gap-1.5 cursor-pointer font-serif whitespace-nowrap"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>已复制</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>复制链接</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <p className="font-bold">拦截原因：</p>
+                  <p className="text-red-700">{verificationResult.reason || "未知校验错误，请确认输入是否完整或联系卖家。"}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Extreme Simple Deployment Protocol */}
