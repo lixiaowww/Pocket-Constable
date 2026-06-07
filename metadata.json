@@ -1,5 +1,5 @@
 {
-  "name": "治安维权全流程助理",
+  "name": "遇袭安全锦囊",
   "description": "一个帮助普通人依法维权的手机适配型口袋助手。包含现场取证音频模拟、反警察不作为施压模板、医院验伤重点清单及索赔计算器。",
   "requestFramePermissions": [
     "microphone"

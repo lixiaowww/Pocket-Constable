@@ -134,7 +134,7 @@ app.get("/api/validate", (req, res) => {
     expires_at: result.expiresAt || "",
     reason: result.reason || "",
     timestamp: new Date().toISOString(),
-    owner_info: "治安防卫保命快捷导航维权卡密认证部"
+    owner_info: "遇袭安全锦囊维权卡密认证部"
   });
 });
 

@@ -63,10 +63,10 @@ export default function ShortcutIntroSection() {
           快捷指令 · 苹果生态联动
         </span>
         <h2 id="shortcut-intro-title" className="text-2xl sm:text-3xl font-serif font-black text-stone-900 mt-2 tracking-tight">
-          苹果官方一键导入：将硬核法律维权装进 iPhone
+          苹果一键导入：将「遇袭安全锦囊」装进 iPhone
         </h2>
         <p className="text-sm text-stone-600 mt-2 font-mono uppercase tracking-wider text-[11px] opacity-75">
-          省去复杂手动配置。点击下方官方分享链接，即可极速导入专为治安事件、防身保护与现场抗辩调解设计的 iOS 原生快捷指令（Shortcuts）。
+          省去复杂手动配置。点击下方一键分享链接，即可极速导入专为遇袭事件、防身保护与现场抗辩调解设计的 iOS 原生快捷指令（Shortcuts）。
         </p>
       </div>
 
@@ -82,7 +82,7 @@ export default function ShortcutIntroSection() {
               </div>
               <div>
                 <h3 className="text-[15px] font-bold text-stone-900 font-serif">
-                  治安保命与法治维权一触即发指令包 v3.0
+                  遇袭安全锦囊一触即发指令包 v3.0
                 </h3>
                 <p className="text-[11px] text-stone-550">
                   支持设备：iPhone 全系 (iOS 14.0+) · 苹果生态原生安全阻断
@@ -279,7 +279,7 @@ export default function ShortcutIntroSection() {
             <div className="space-y-1">
               <strong className="text-stone-900 block font-serif">B. 勾选绑定：</strong>
               <p className="text-stone-700 leading-relaxed text-[11px]">
-                在“轻点三下”中勾选已被你导入的 <strong>“治安保命与法治维权一触即发指令包”</strong>。未来面临紧急突发状况，只需隔着衣服敲击手机背面三下，就会执行极暗静录。
+                在“轻点三下”中勾选已被你导入的 <strong>“遇袭安全锦囊一触即发指令包”</strong>。未来面临紧急突发状况，只需隔着衣服敲击手机背面三下，就会执行极暗静录。
               </p>
             </div>
           </div>

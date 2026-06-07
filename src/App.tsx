@@ -117,12 +117,12 @@ export default function App() {
         {/* Navigation / Hero Header bar - Editorial Theme */}
         <header className="flex justify-between items-end border-b-2 border-black pb-4 mb-8">
           <div>
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-serif font-black tracking-tighter uppercase leading-none text-[#1A1A1A]">治安与侵权维权程序</h1>
-            <p className="text-[10px] sm:text-xs font-mono mt-2 tracking-widest uppercase opacity-60 italic">快捷指令防卫与救济生命周期框架 v3.2 / iOS 运行联动</p>
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-serif font-black tracking-tighter uppercase leading-none text-[#1A1A1A]">遇袭安全锦囊</h1>
+            <p className="text-[10px] sm:text-xs font-mono mt-2 tracking-widest uppercase opacity-60 italic">遇袭防身与法律维权一键导航 v3.2 / iOS 运行联动</p>
           </div>
           <div className="text-right hidden sm:block">
-            <p className="text-xs sm:text-sm font-bold uppercase tracking-widest">治安防卫 & 民事侵权索赔</p>
-            <p className="text-xl sm:text-3xl font-serif italic leading-none mt-1">全流程维权导航</p>
+            <p className="text-xs sm:text-sm font-bold uppercase tracking-widest">紧急遇袭防身 & 民事索赔</p>
+            <p className="text-xl sm:text-3xl font-serif italic leading-none mt-1">全流程安全锦囊</p>
           </div>
         </header>
 
