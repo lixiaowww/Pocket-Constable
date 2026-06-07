@@ -3,7 +3,7 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import app from "./api-app";
 
-const PORT = 3000;
+const PORT = 3001;
 
 // Vite Setup for Development / Static serving for production
 async function startServer() {
