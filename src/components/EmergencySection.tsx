@@ -17,6 +17,7 @@ import {
   Lightbulb,
   ExternalLink
 } from "lucide-react";
+import { formatTime } from "../lib/utils";
 
 interface EmergencySectionProps {
   mockRecording: boolean;
@@ -24,6 +25,7 @@ interface EmergencySectionProps {
   triggerMockRecording: () => void;
   screenDimmed: boolean;
   toggleScreenDim: () => void;
+  audioUrl: string | null;
 }
 
 export default function EmergencySection({
@@ -32,13 +34,21 @@ export default function EmergencySection({
   triggerMockRecording,
   screenDimmed,
   toggleScreenDim,
+  audioUrl,
 }: EmergencySectionProps) {
+  // We'll use the universal recorder from props now, but keep fallback logic
+  const useRealRecorder = true; 
+
+  const activeRecording = mockRecording;
+  const activeSeconds = recordingSeconds;
+  const handleRecordingToggle = triggerMockRecording;
+
   // Random audio visualizer heights
   const [visualizerHeights, setVisualizerHeights] = useState<number[]>([15, 8, 24, 12, 18, 6, 22, 14, 10, 20]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (mockRecording) {
+    if (activeRecording) {
       interval = setInterval(() => {
         setVisualizerHeights(
           Array.from({ length: 15 }, () => Math.floor(Math.random() * 28) + 4)
@@ -46,13 +56,7 @@ export default function EmergencySection({
       }, 150);
     }
     return () => clearInterval(interval);
-  }, [mockRecording]);
-
-  const formatTime = (secs: number) => {
-    const m = Math.floor(secs / 60).toString().padStart(2, "0");
-    const s = (secs % 60).toString().padStart(2, "0");
-    return `${m}:${s}`;
-  };
+  }, [activeRecording]);
 
   return (
     <div className="space-y-6">
@@ -118,10 +122,10 @@ export default function EmergencySection({
           <div className="bg-[#FAF9F5] p-4 border border-black flex flex-col justify-between rounded-sm">
             <div>
               <p className="text-[10px] font-bold text-stone-900 uppercase tracking-widest border-b border-black/10 pb-1 mb-2">
-                静默录音机制 (5分钟自动保存)
+                {useRealRecorder ? "浏览器真录音 (5分钟自动保存)" : "静默录音机制 (5分钟自动保存)"}
               </p>
               
-              {mockRecording ? (
+              {activeRecording ? (
                 <div className="flex items-end gap-1 h-8 my-3 px-1">
                   {visualizerHeights.map((h, idx) => (
                     <div 
@@ -140,19 +144,43 @@ export default function EmergencySection({
 
             <div className="flex items-center justify-between pt-3 border-t border-black/10 mt-2">
               <span className="text-xs text-stone-700">
-                录音进程: <strong className={mockRecording ? "text-red-700 font-mono font-bold" : "text-stone-400 font-mono"}>{formatTime(recordingSeconds)}</strong>
+                录音进程: <strong className={activeRecording ? "text-red-700 font-mono font-bold" : "text-stone-400 font-mono"}>{formatTime(activeSeconds)}</strong>
               </span>
               <button
                 id="btn-trigger-mock-recording"
-                onClick={triggerMockRecording}
+                onClick={handleRecordingToggle}
                 className={`py-1.5 px-3 text-xs transition rounded-sm cursor-pointer font-bold font-serif ${
-                  mockRecording 
+                  activeRecording 
                     ? "bg-red-700 hover:bg-red-850 text-white" 
                     : "bg-black hover:bg-stone-900 text-white"
                 }`}
               >
-                {mockRecording ? "停止录音取证" : "发起隐蔽取证"}
+                {activeRecording ? "停止录音取证" : "发起隐蔽取证"}
               </button>
+            </div>
+            
+            {audioUrl && !activeRecording && (
+              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-300 rounded-sm animate-fadeIn">
+                <div className="flex items-center gap-2 mb-2 text-emerald-800">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span className="text-xs font-bold font-serif">音频证据已锁定 (仅限本次会话)</span>
+                </div>
+                <a 
+                  href={audioUrl} 
+                  download={`遇袭证据_${new Date().toISOString().slice(0,10)}.webm`}
+                  className="block w-full text-center py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-sm transition cursor-pointer font-mono"
+                >
+                  立即下载 .webm 录音文件
+                </a>
+              </div>
+            )}
+
+            {useRealRecorder && (
+              <p className="text-[9px] text-stone-500 mt-1">停止录音后将自动下载 .webm 文件到手机</p>
+            )}
+
+            <div className="mt-3 pt-2 border-t border-black/10 text-[9px] text-amber-800 leading-normal font-sans">
+              ⚖️ <strong>证据提示</strong>：录音仅在您本人是对话当事人时方可作为合法证据（最高法证据规定）。
             </div>
           </div>
         </div>
@@ -166,14 +194,14 @@ export default function EmergencySection({
       </div>
 
       {/* Defensive Checklist Alert - Critical Warning Speech */}
-      <div className="bg-[#FAF1F1] border-l-4 border-red-650 p-5 rounded-sm border border-red-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.05)]">
+      <div className="bg-[#FAF1F1] border-l-4 border-red-600 p-5 rounded-sm border border-red-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.05)]">
         <div className="flex gap-4">
           <AlertTriangle className="w-6 h-6 text-red-700 shrink-0 mt-0.5" />
           <div>
             <h4 className="text-xs font-mono tracking-widest uppercase font-bold text-red-950">法庭重要采信：黄金防守吼叫词！</h4>
             <div className="text-sm text-stone-800 mt-2 leading-relaxed">
               开启隐蔽音频录制后，身体迅速做出<strong>战术撤退</strong>姿态，绝对禁止推搡挑衅。双手举高并对准音轨清晰大吼：
-              <div className="bg-white border border-red-350 p-4 rounded-sm my-2 font-bold font-serif text-lg text-stone-900 select-all relative group cursor-pointer inline-block w-full shadow-sm">
+              <div className="bg-white border border-red-300 p-4 rounded-sm my-2 font-bold font-serif text-lg text-stone-900 select-all relative group cursor-pointer inline-block w-full shadow-sm">
                 “你干嘛打人！我一直在退让劝阻！你别靠近我，有话好好说！你别动手、打人是违法的！”
               </div>
               <p className="text-xs text-red-700 font-serif italic mt-2">
@@ -223,7 +251,7 @@ export default function EmergencySection({
         <div className="border border-black rounded-sm p-4.5 bg-white space-y-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.08)]">
           <h3 className="text-sm font-mono tracking-widest uppercase font-bold text-stone-900 border-b-2 border-black pb-2 flex items-center gap-2">
             <Camera className="w-5 h-5" />
-            锁定五类监控监控
+            锁定五类监控
           </h3>
           
           <p className="text-[11px] text-stone-500 font-mono">

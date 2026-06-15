@@ -14,7 +14,6 @@ import {
   VolumeX, 
   Smartphone, 
   Download,
-  AlertCircle,
   Clock
 } from "lucide-react";
 
@@ -24,6 +23,7 @@ interface ShortcutSimulatorProps {
   mockRecording: boolean;
   recordingSeconds: number;
   triggerMockRecording: () => void;
+  audioUrl: string | null;
 }
 
 export default function ShortcutSimulator({
@@ -32,6 +32,7 @@ export default function ShortcutSimulator({
   mockRecording,
   recordingSeconds,
   triggerMockRecording,
+  audioUrl,
 }: ShortcutSimulatorProps) {
   // Format seconds to mm:ss
   const formatTime = (secs: number) => {
@@ -85,10 +86,10 @@ export default function ShortcutSimulator({
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-650"></span>
               </span>
               <div className="text-[11px]">
-                <p className="font-bold text-red-950 font-serif italic">静默无声摄录中...</p>
+                <p className="font-bold text-red-950 font-serif italic">实时音频取证中...</p>
                 <p className="text-[9px] text-red-700 font-mono flex items-center gap-1">
                   <VolumeX className="w-3 h-3" />
-                  [ 全静音 + 屏幕亮度极微 ]
+                  [ 正在写入浏览器缓存 ]
                 </p>
               </div>
             </div>
@@ -101,9 +102,34 @@ export default function ShortcutSimulator({
                 onClick={triggerMockRecording}
                 className="text-[10px] bg-red-700 hover:bg-red-800 text-white px-2 py-1 rounded-sm font-bold transition cursor-pointer font-serif"
               >
-                停止录制
+                结束
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Download Link when audio is ready */}
+        {!mockRecording && audioUrl && (
+          <div className="mb-4 bg-emerald-50 border border-emerald-500 rounded-sm p-3 animate-fadeIn">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-1 bg-emerald-600 text-white rounded-full">
+                  <Download className="w-3 h-3" />
+                </div>
+                <span className="text-[11px] font-bold text-emerald-900 font-serif italic">取证音频已就绪</span>
+              </div>
+              <span className="text-[9px] font-mono text-emerald-600 bg-white px-1 border border-emerald-200 uppercase">无痕保存</span>
+            </div>
+            <a 
+              href={audioUrl} 
+              download={`遇袭证据_${new Date().toISOString().slice(0,10)}_${new Date().toTimeString().slice(0,5).replace(':','-')}.webm`}
+              className="block w-full text-center py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-sm transition cursor-pointer font-mono"
+            >
+              点击下载加密录音至本地
+            </a>
+            <p className="text-[8px] text-emerald-700 mt-2 leading-tight text-center opacity-70">
+              提示：音频仅存在于当前浏览器内存中，刷新页面将永久消失，请立即保存。
+            </p>
           </div>
         )}
 

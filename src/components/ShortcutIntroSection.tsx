@@ -5,29 +5,35 @@
 
 import React, { useState } from "react";
 import { 
-  Download, 
-  Settings, 
   Smartphone, 
-  HeartHandshake, 
   ExternalLink, 
-  Share2,
-  VolumeX,
-  Sun,
   SmartphoneNfc,
-  CheckCircle2,
   Key,
   Copy,
   Check,
-  AlertTriangle,
   RefreshCw
 } from "lucide-react";
-import { SAMPLE_SHORTCUT_CODE, REAL_SHORTCUT_I_CLOUD_LINK } from "../data";
+import { REAL_SHORTCUT_I_CLOUD_LINK } from "../data";
 
 export default function ShortcutIntroSection() {
   const [buyerKey, setBuyerKey] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const [verificationResult, setVerificationResult] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+  const [pageUrlCopied, setPageUrlCopied] = useState(false);
+  const [isInAppBrowser, setIsInAppBrowser] = useState(() => {
+    if (typeof window !== "undefined") {
+      const ua = navigator.userAgent.toLowerCase();
+      return /micromessenger|xiaohongshu/i.test(ua);
+    }
+    return false;
+  });
+
+  const copyPageUrl = () => {
+    navigator.clipboard.writeText(window.location.href.split("?")[0]);
+    setPageUrlCopied(true);
+    setTimeout(() => setPageUrlCopied(false), 2000);
+  };
 
   const handleVerifyKey = async () => {
     if (!buyerKey.trim()) return;
@@ -57,6 +63,48 @@ export default function ShortcutIntroSection() {
 
   return (
     <div className="space-y-6">
+      {/* WeChat/Xiaohongshu Warning Banner */}
+      {isInAppBrowser && (
+        <div className="bg-amber-50 border-2 border-amber-500 rounded-sm p-5 shadow-[4px_4px_0_0_rgba(245,158,11,0.15)] space-y-3 animate-fadeIn">
+          <div className="flex items-start gap-2.5">
+            <span className="text-xl shrink-0">⚠️</span>
+            <div className="space-y-1">
+              <h4 className="font-serif font-black text-amber-955 text-sm">
+                微信 / 小红书应用内浏览器限制提示
+              </h4>
+              <p className="text-xs text-amber-900 leading-relaxed">
+                iOS 系统对快捷指令的安全性有极高要求。微信或小红书的内置浏览器会直接拦截 <strong>iCloud 导入链接</strong> 和 <strong>.shortcut 格式文件下载</strong>。
+              </p>
+            </div>
+          </div>
+          <div className="bg-white/60 p-3 rounded-sm border border-amber-200 text-xs text-amber-950 space-y-2">
+            <p className="font-bold">【极速解决方式】：</p>
+            <p className="leading-relaxed font-sans text-stone-850">
+              1. 点击本页右上角菜单按钮 <strong>「···」</strong>，选择 <strong>「在 Safari 中打开」</strong> (iOS) 或 <strong>「在默认浏览器中打开」</strong> (安卓)。<br />
+              2. 或者点击下方按钮复制本站网址，自行在 Safari 浏览器中粘贴打开：
+            </p>
+            <div className="pt-1 flex gap-2">
+              <button
+                onClick={copyPageUrl}
+                className="py-1.5 px-4 bg-amber-600 hover:bg-amber-700 text-white font-serif font-bold text-xs rounded-sm transition cursor-pointer flex items-center gap-1.5 shadow-sm border border-amber-800"
+              >
+                {pageUrlCopied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>已成功复制本站网址</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>一键复制本站网址</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Title */}
       <div>
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-sm text-xs font-serif font-bold tracking-widest uppercase bg-[#EAECE6] text-[#333] border border-black/20">
@@ -94,16 +142,24 @@ export default function ShortcutIntroSection() {
             </p>
           </div>
 
-          <div className="shrink-0 w-full md:w-auto">
+          <div className="shrink-0 w-full md:w-auto flex flex-col gap-2">
             <a
               id="link-icloud-shortcut-import"
               href={REAL_SHORTCUT_I_CLOUD_LINK}
               target="_blank"
               rel="noreferrer"
-              className="w-full md:w-auto py-3 px-6 bg-[#007AFF] hover:bg-[#0062CC] text-white text-xs font-serif font-bold rounded-sm tracking-wide transition duration-150 inline-flex items-center justify-center gap-2 cursor-pointer shadow-sm border border-blue-800"
+              className="w-full py-3 px-6 bg-[#007AFF] hover:bg-[#0062CC] text-white text-xs font-serif font-bold rounded-sm tracking-wide transition duration-150 inline-flex items-center justify-center gap-2 cursor-pointer shadow-sm border border-blue-800 text-center animate-pulse"
             >
               <ExternalLink className="w-4 h-4" />
-              <span>苹果 iCloud 官方一键导入</span>
+              <span>方式一：iCloud 官方导入 (推荐)</span>
+            </a>
+            <a
+              id="link-local-shortcut-download"
+              href="/antiattack.shortcut"
+              download="遇袭维权锦囊.shortcut"
+              className="w-full py-2.5 px-6 bg-white hover:bg-stone-50 text-stone-900 text-xs font-serif font-bold rounded-sm tracking-wide transition duration-150 inline-flex items-center justify-center gap-2 cursor-pointer shadow-sm border border-black text-center"
+            >
+              <span>方式二：下载本地 .shortcut 安装包</span>
             </a>
           </div>
         </div>
@@ -156,6 +212,28 @@ export default function ShortcutIntroSection() {
 
       </div>
 
+      {/* Android PWA */}
+      <div className="bg-[#FAF9F5] border border-black p-6 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] space-y-4">
+        <div className="flex items-center gap-2 border-b border-black/10 pb-3">
+          <SmartphoneNfc className="w-5 h-5 text-stone-900" />
+          <h3 className="text-sm font-serif font-black text-stone-950 uppercase tracking-wide">
+            安卓用户 · PWA 网页版安装
+          </h3>
+        </div>
+        <p className="text-xs text-stone-600 leading-relaxed">
+          安卓手机无需快捷指令。用 <strong>Chrome 浏览器</strong> 打开本站，输入卡密激活后，可「添加到主屏幕」像 App 一样使用。
+        </p>
+        <ol className="text-xs text-stone-700 space-y-2 list-decimal list-inside font-mono">
+          <li>Chrome 打开 <span className="underline">pocket-constable.vercel.app</span></li>
+          <li>首次进入输入小红书购买的卡密激活</li>
+          <li>菜单 →「添加到主屏幕」或「安装应用」</li>
+          <li>在「冲突防卫」页点「发起隐蔽取证」→ 允许麦克风</li>
+        </ol>
+        <p className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 p-3 leading-relaxed">
+          安卓 PWA 版不含系统级静音/降亮度，录音在浏览器内完成，停止后自动下载录音文件。
+        </p>
+      </div>
+
       {/* Buyer Self-Service Verification & Binding Portal */}
       <div className="bg-[#FAF9F5] border border-black p-6 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] space-y-4">
         <div className="flex items-center gap-2 border-b border-black/10 pb-3">
@@ -165,7 +243,7 @@ export default function ShortcutIntroSection() {
           </h3>
         </div>
         <p className="text-xs text-stone-600 leading-relaxed font-sans">
-          如果您从小红书商家处购买了本指令包的卡密，可以在下方验证您的卡密状态，并直接复制专属接口地址绑定到您的 iPhone 快捷指令中。
+          如果您从小红书商家处购买了本指令包的卡密，可以在下方验证您的卡密状态。iPhone 用户可复制接口地址绑定快捷指令；安卓用户直接在本站激活即可。
         </p>
 
         <div className="space-y-4">
@@ -209,36 +287,68 @@ export default function ShortcutIntroSection() {
               </div>
 
               {verificationResult.valid ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <p><strong>截止有效期：</strong> <span className="underline">{verificationResult.expires_at}</span></p>
-                  <p className="text-[11px] text-stone-700 leading-normal font-sans">
-                    卡密验证成功！请复制下方您的<strong>专属校验接口地址</strong>，并在 iPhone 快捷指令“获取 URL 内容”步骤中粘贴它：
-                  </p>
                   
-                  {/* Dynamic Copy URL field */}
-                  <div className="flex gap-2 pt-1">
-                    <input
-                      type="text"
-                      readOnly
-                      value={validationUrl}
-                      className="flex-1 p-2 bg-white border border-emerald-300 text-xs font-mono text-stone-900 focus:outline-none"
-                    />
-                    <button
-                      onClick={copyValidationUrl}
-                      className="px-4 bg-[#007AFF] hover:bg-[#0062CC] text-white text-xs rounded-sm transition flex items-center justify-center gap-1.5 cursor-pointer font-serif whitespace-nowrap"
-                    >
-                      {copied ? (
-                        <>
-                          <Check className="w-3.5 h-3.5" />
-                          <span>已复制</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5" />
-                          <span>复制链接</span>
-                        </>
-                      )}
-                    </button>
+                  <div className="text-[11px] text-stone-700 leading-relaxed font-sans space-y-3 bg-emerald-100/40 p-3.5 border border-emerald-200 rounded-sm">
+                    <p className="font-bold text-emerald-950">🎉 卡密激活成功！请通过以下两种方式之一绑定到您的快捷指令：</p>
+                    
+                    <div className="space-y-1">
+                      <p className="font-bold text-stone-900">方式一：极速绑定（免修改配置 · 最推荐）</p>
+                      <p>
+                        复制您的<strong>激活卡密本身 (SHC-...)</strong>。当您导入快捷指令时，系统会弹出<strong>「导入问题」窗口</strong>，提示“请输入激活卡密”。在此处直接粘贴卡密即可，无需任何复杂设置！
+                      </p>
+                      <div className="pt-1.5 flex gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={buyerKey.trim()}
+                          className="flex-1 p-2 bg-white border border-emerald-300 text-xs font-mono text-stone-900 focus:outline-none"
+                        />
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(buyerKey.trim());
+                            alert("激活卡密复制成功！请在导入快捷指令时的输入框中粘贴。");
+                          }}
+                          className="px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-sm transition flex items-center justify-center gap-1.5 cursor-pointer font-serif whitespace-nowrap"
+                        >
+                          复制卡密
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 border-t border-emerald-200/50 pt-3 mt-3">
+                      <p className="font-bold text-stone-900">方式二：手动替换校验接口（高级备用）</p>
+                      <p>
+                        若您在非标准环境下导入，可以复制下方的<strong>专属校验接口地址</strong>，手动替换快捷指令中“获取 URL 内容”步骤中的网址：
+                      </p>
+                      
+                      {/* Dynamic Copy URL field */}
+                      <div className="flex gap-2 pt-1.5">
+                        <input
+                          type="text"
+                          readOnly
+                          value={validationUrl}
+                          className="flex-1 p-2 bg-white border border-emerald-300 text-xs font-mono text-stone-900 focus:outline-none"
+                        />
+                        <button
+                          onClick={copyValidationUrl}
+                          className="px-4 bg-[#007AFF] hover:bg-[#0062CC] text-white text-xs rounded-sm transition flex items-center justify-center gap-1.5 cursor-pointer font-serif whitespace-nowrap"
+                        >
+                          {copied ? (
+                            <>
+                              <Check className="w-3.5 h-3.5" />
+                              <span>已复制</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>复制链接</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (

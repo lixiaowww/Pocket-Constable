@@ -15,11 +15,8 @@ import {
   Lock, 
   AlertTriangle, 
   RefreshCw, 
-  HelpCircle, 
   ArrowRight,
-  Shield,
-  FileCode,
-  Globe
+  FileCode
 } from "lucide-react";
 
 interface KeyLog {
@@ -40,9 +37,18 @@ interface VerificationLog {
   status: "success" | "failed";
 }
 
+interface SimulationResult {
+  valid: boolean;
+  status: string;
+  expires_at?: string;
+  reason?: string;
+  timestamp: string;
+}
+
 export default function AdminConsoleSection() {
   const [passcode, setPasscode] = useState("");
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isTestingMode, setIsTestingMode] = useState(false);
   const [authError, setAuthError] = useState("");
   const [loading, setLoading] = useState(false);
   
@@ -59,7 +65,7 @@ export default function AdminConsoleSection() {
 
   // Shortcuts query simulator
   const [simulatedKey, setSimulatedKey] = useState("");
-  const [simulationResult, setSimulationResult] = useState<any>(null);
+  const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [simulating, setSimulating] = useState(false);
 
   // Authenticate admin portal
@@ -68,39 +74,65 @@ export default function AdminConsoleSection() {
     setLoading(true);
     setAuthError("");
     try {
-      const res = await fetch(`/api/keys/admin-data?passcode=${encodeURIComponent(passcode)}`);
+      const res = await fetch("/api/keys/admin-data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passcode }),
+      });
       if (res.ok) {
         const data = await res.json();
         setActiveKeys(data.activeKeys);
         setVerificationLogs(data.verificationLogs);
         setIsAuthorized(true);
+        setIsTestingMode(!!data.isTestingMode);
         // Persist token session locally
-        localStorage.setItem("sh_admin_passcode", passcode);
+        const token = data.token || passcode;
+        sessionStorage.setItem("sh_admin_session", token);
+        setPasscode(token);
       } else {
-        const err = await res.json();
-        setAuthError(err.error || "口令验证不通过，请按 .env 预配置的 ADMIN_PASSCODE 调整。");
+        let errMsg = "口令验证未通过";
+        try {
+          const err = await res.json();
+          errMsg = err.error || errMsg;
+        } catch (_) {
+          try {
+            const text = await res.text();
+            errMsg = text || `服务器错误，状态码: ${res.status}`;
+          } catch (__) {
+            errMsg = `服务器错误，状态码: ${res.status}`;
+          }
+        }
+        setAuthError(errMsg);
       }
     } catch (e) {
-      setAuthError("服务器端通信异常，请确认 Express 服务配置。");
+      setAuthError(`网络连接异常: ${(e as Error).message || "无法连接至服务器，请检查网络。"}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // Re-verify on mount if password was stored
+  // Re-verify on mount if password/token was stored
   useEffect(() => {
-    const saved = localStorage.getItem("sh_admin_passcode");
+    const saved = sessionStorage.getItem("sh_admin_session");
     if (saved) {
       setPasscode(saved);
       // Simulate click
       const autoAuth = async () => {
         try {
-          const res = await fetch(`/api/keys/admin-data?passcode=${encodeURIComponent(saved)}`);
+          const res = await fetch("/api/keys/admin-data", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ passcode: saved }),
+          });
           if (res.ok) {
             const data = await res.json();
             setActiveKeys(data.activeKeys);
             setVerificationLogs(data.verificationLogs);
             setIsAuthorized(true);
+            setIsTestingMode(!!data.isTestingMode);
+            const token = data.token || saved;
+            sessionStorage.setItem("sh_admin_session", token);
+            setPasscode(token);
           }
         } catch (_) {}
       };
@@ -112,11 +144,26 @@ export default function AdminConsoleSection() {
   const handleRefreshData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/keys/admin-data?passcode=${encodeURIComponent(passcode)}`);
+      const res = await fetch("/api/keys/admin-data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passcode }),
+      });
       if (res.ok) {
         const data = await res.json();
         setActiveKeys(data.activeKeys);
         setVerificationLogs(data.verificationLogs);
+        if (data.token) {
+          sessionStorage.setItem("sh_admin_session", data.token);
+          setPasscode(data.token);
+        }
+      } else {
+        let errMsg = "";
+        try {
+          const err = await res.json();
+          errMsg = err.error;
+        } catch (_) {}
+        if (errMsg) setAuthError(errMsg);
       }
     } catch (_) {}
     setLoading(false);
@@ -144,11 +191,20 @@ export default function AdminConsoleSection() {
         setActiveKeys(prev => [data.key, ...prev]);
         setMemo("");
       } else {
-        const err = await res.json();
-        setGenerateError(err.error || "生成失败");
+        let errMsg = "生成失败";
+        try {
+          const err = await res.json();
+          errMsg = err.error || errMsg;
+        } catch (_) {
+          try {
+            const text = await res.text();
+            errMsg = text || errMsg;
+          } catch (__) {}
+        }
+        setGenerateError(errMsg);
       }
-    } catch (_) {
-      setGenerateError("请求响应异常，无法生成。");
+    } catch (e) {
+      setGenerateError(`请求发送失败: ${(e as Error).message || "网络异常"}`);
     }
   };
 
@@ -166,11 +222,20 @@ export default function AdminConsoleSection() {
       if (res.ok) {
         setActiveKeys(prev => prev.filter(k => k.key !== keyToRevoke));
       } else {
-        const err = await res.json();
-        alert(err.error || "撤销失败");
+        let errMsg = "撤销失败";
+        try {
+          const err = await res.json();
+          errMsg = err.error || errMsg;
+        } catch (_) {
+          try {
+            const text = await res.text();
+            errMsg = text || errMsg;
+          } catch (__) {}
+        }
+        alert(errMsg);
       }
-    } catch (_) {
-      alert("服务器交互异常");
+    } catch (e) {
+      alert(`请求交互异常: ${(e as Error).message || "网络错误"}`);
     }
   };
 
@@ -187,7 +252,12 @@ export default function AdminConsoleSection() {
       // Automatically refresh logs after simulation
       setTimeout(handleRefreshData, 500);
     } catch (_) {
-      setSimulationResult({ error: "模拟请求出错" });
+      setSimulationResult({ 
+        valid: false, 
+        status: "ERROR", 
+        reason: "模拟请求出错", 
+        timestamp: new Date().toISOString() 
+      });
     } finally {
       setSimulating(false);
     }
@@ -245,7 +315,7 @@ export default function AdminConsoleSection() {
             </label>
             <input
               type="password"
-              placeholder="默认密码：admin888"
+              placeholder="请输入管理员口令"
               value={passcode}
               onChange={(e) => setPasscode(e.target.value)}
               className="w-full p-3 bg-[#FAFDF6] border border-black text-xs font-mono tracking-widest focus:outline-none focus:ring-1 focus:ring-black"
@@ -277,6 +347,22 @@ export default function AdminConsoleSection() {
 
   return (
     <div className="space-y-8">
+      {/* Testing Mode Alert Banner */}
+      {isTestingMode && (
+        <div className="bg-red-50 border-2 border-red-500 p-4.5 rounded-sm text-xs text-red-955 flex gap-3 shadow-[4px_4px_0_0_rgba(239,68,68,0.15)] animate-fadeIn">
+          <div className="shrink-0 text-red-650 font-bold text-sm">⚠️</div>
+          <div className="space-y-1">
+            <h4 className="font-bold font-serif text-red-950">当前处于系统测试密钥运行状态</h4>
+            <p className="leading-relaxed font-sans text-stone-800">
+              系统当前未检测到自定义的 <code>LICENSE_SECRET</code> 或 <code>ADMIN_PASSCODE</code> 环境变量，已自动启用测试用密码（<code>admin888</code>）和签名密钥。
+            </p>
+            <p className="leading-relaxed font-bold font-sans text-stone-900 mt-1">
+              【商用警告】：在正式对买家销售前，请务必前往 Vercel 项目设置中配置您专属的密钥和口令。否则买家可通过默认密码登录此后台，并可轻易伪造卡密破解授权。
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Title block */}
       <div className="pb-4 border-b border-black flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -305,7 +391,7 @@ export default function AdminConsoleSection() {
           <button
             onClick={() => {
               setIsAuthorized(false);
-              localStorage.removeItem("sh_admin_passcode");
+              sessionStorage.removeItem("sh_admin_session");
             }}
             className="p-2 border border-black bg-neutral-100 hover:bg-neutral-200 text-xs font-bold rounded-sm transition cursor-pointer font-serif"
           >

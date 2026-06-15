@@ -9,13 +9,8 @@ import {
   TrendingUp, 
   Gavel, 
   AlertTriangle, 
-  CheckCircle, 
-  UserX, 
-  HelpCircle,
-  FileSpreadsheet,
-  Coins,
-  ShieldCheck,
-  Lightbulb
+  UserX,
+  ShieldCheck
 } from "lucide-react";
 import { CompensationData } from "../types";
 

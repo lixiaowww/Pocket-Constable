@@ -6,18 +6,12 @@
 import React, { useState, useEffect } from "react";
 import { HOSPITAL_ITEMS } from "../data";
 import { 
-  FileCheck, 
   Stethoscope, 
   CheckCircle2, 
-  AlertCircle, 
-  FileText, 
-  HelpCircle,
-  Clock,
   Briefcase
 } from "lucide-react";
 
 export default function HospitalSection() {
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [artifactChecks, setArtifactChecks] = useState<Record<string, boolean>>(() => {
     try {
       const saved = localStorage.getItem("hospital_briefcase_checks");
@@ -295,7 +289,7 @@ export default function HospitalSection() {
                     </div>
                     <span>原件或复印件 4：医疗费发票原件</span>
                   </div>
-                  <span className="text-[9px] text-slate-550">或加盖财务章电子票</span>
+                  <span className="text-[9px] text-slate-500">或加盖财务章电子票</span>
                 </button>
 
                 {/* 5 */}
@@ -340,7 +334,7 @@ export default function HospitalSection() {
             </div>
 
             <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-[10px] text-slate-400 leading-normal mt-4">
-              💡 <strong>保存提示</strong>：您的复复选状态已通过 `localStorage` 自动锁死存在当前浏览器。即使关闭浏览器、刷新页面或点击菜单，数据依然完整保留。
+              💡 <strong>保存提示</strong>：您的复选状态已通过 `localStorage` 自动锁死存在当前浏览器。即使关闭浏览器、刷新页面或点击菜单，数据依然完整保留。
             </div>
 
           </div>
