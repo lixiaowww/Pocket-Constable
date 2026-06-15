@@ -112,7 +112,9 @@ export async function checkKeyValidity(key: string): Promise<{ valid: boolean; r
 
 async function isAdminAuthorized(passcode: string): Promise<boolean> {
   if (!passcode) return false;
-  if (passcode === getAdminPasscode()) return true;
+  const p = passcode.trim();
+  const adminP = getAdminPasscode().trim();
+  if (p === adminP || p.toLowerCase() === adminP.toLowerCase()) return true;
   return await validateAdminSession(passcode);
 }
 
@@ -267,7 +269,9 @@ export default async function handler(req: any, res: any) {
     const body = await readJsonBody(req);
     const passcode = body?.passcode || "";
 
-    const isPasscodeAuth = passcode === getAdminPasscode();
+    const p = (passcode || "").trim();
+    const adminP = getAdminPasscode().trim();
+    const isPasscodeAuth = p === adminP || p.toLowerCase() === adminP.toLowerCase();
     const isSessionAuth = !isPasscodeAuth && (await validateAdminSession(passcode));
 
     if (!isPasscodeAuth && !isSessionAuth) {

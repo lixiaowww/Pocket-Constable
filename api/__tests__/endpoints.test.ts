@@ -126,6 +126,20 @@ describe("API Endpoints Integration Tests", () => {
     expect(res.statusCode).toBe(401);
   });
 
+  it("should authorize admin panel login with case-insensitive and trailing-space passcode", async () => {
+    const req = createMockReq("/api/keys/admin-data", "POST", {
+      passcode: "  ADMIN-SECRET-PWD  ",
+    });
+    const res = createMockRes();
+
+    await handler(req, res);
+    await res.promise;
+
+    expect(res.statusCode).toBe(200);
+    const data = JSON.parse(res.body);
+    expect(data.token).toBeDefined();
+  });
+
   it("should validate a key and perform device binding", async () => {
     // 1. Generate a key
     const reqGen = createMockReq("/api/keys/generate", "POST", {
