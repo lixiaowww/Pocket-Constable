@@ -11,12 +11,31 @@ const redis = hasRedis
     })
   : null;
 
+export interface KeyLog {
+  key: string;
+  memo: string;
+  days: number;
+  createdAt: string;
+  expiresAt: string;
+  status?: string;
+}
+
+export interface VerificationLog {
+  timestamp: string;
+  key: string;
+  ip: string;
+  device: string;
+  result: string;
+  status: "success" | "failed";
+}
+
 // Fallback in-memory structures
-let memoryActiveKeys: any[] = [];
-let memoryVerificationLogs: any[] = [];
+let memoryActiveKeys: KeyLog[] = [];
+let memoryVerificationLogs: VerificationLog[] = [];
 const memoryDeviceBindings = new Map<string, string>();
 const memoryRevokedKeys = new Set<string>();
-const memorySessions = new Map<string, number>(); // token -> expiry timestamp
+const memorySessions = new Map<string, number>();
+const memoryRateLimits = new Map<string, number[]>();
 
 export async function initStore() {
   if (hasRedis) {
@@ -28,10 +47,10 @@ export async function initStore() {
 }
 
 // 1. Active Keys
-export async function getActiveKeys(): Promise<any[]> {
+export async function getActiveKeys(): Promise<KeyLog[]> {
   if (redis) {
     try {
-      const list = await redis.lrange("pc:active_keys", 0, -1);
+      const list = await redis.lrange<KeyLog>("pc:active_keys", 0, -1);
       return list || [];
     } catch (e) {
       console.error("[Store] Redis getActiveKeys error, falling back to memory:", e);
@@ -41,7 +60,7 @@ export async function getActiveKeys(): Promise<any[]> {
   return memoryActiveKeys;
 }
 
-export async function addActiveKey(keyLog: any): Promise<void> {
+export async function addActiveKey(keyLog: KeyLog): Promise<void> {
   if (redis) {
     try {
       await redis.lpush("pc:active_keys", keyLog);
@@ -54,23 +73,36 @@ export async function addActiveKey(keyLog: any): Promise<void> {
   }
 }
 
+// Atomic Lua script: find-and-remove a key from the list in a single Redis roundtrip,
+// avoiding the non-atomic read-delete-rewrite race condition.
+const REMOVE_KEY_SCRIPT = `
+local list = redis.call('LRANGE', KEYS[1], 0, -1)
+local found = 0
+local newList = {}
+for i = 1, #list do
+  local ok, decoded = pcall(cjson.decode, list[i])
+  if ok and decoded['key'] == ARGV[1] then
+    found = 1
+  else
+    table.insert(newList, list[i])
+  end
+end
+if found == 0 then return 0 end
+redis.call('DEL', KEYS[1])
+for i = #newList, 1, -1 do
+  redis.call('LPUSH', KEYS[1], newList[i])
+end
+return found
+`;
+
 export async function removeActiveKey(key: string): Promise<boolean> {
   if (redis) {
     try {
-      const list = await getActiveKeys();
-      const newList = list.filter((k: any) => k.key !== key);
-      if (list.length === newList.length) return false;
-      
-      // Rewrite list
-      await redis.del("pc:active_keys");
-      if (newList.length > 0) {
-        // reverse it because lpush prepends
-        await redis.lpush("pc:active_keys", ...[...newList].reverse());
-      }
-      return true;
+      const result = await redis.eval(REMOVE_KEY_SCRIPT, ["pc:active_keys"], [key]) as number;
+      return result === 1;
     } catch (e) {
       console.error("[Store] Redis removeActiveKey error, falling back to memory:", e);
-      const idx = memoryActiveKeys.findIndex((k: any) => k.key === key);
+      const idx = memoryActiveKeys.findIndex((k) => k.key === key);
       if (idx !== -1) {
         memoryActiveKeys.splice(idx, 1);
         return true;
@@ -78,7 +110,7 @@ export async function removeActiveKey(key: string): Promise<boolean> {
       return false;
     }
   } else {
-    const idx = memoryActiveKeys.findIndex((k: any) => k.key === key);
+    const idx = memoryActiveKeys.findIndex((k) => k.key === key);
     if (idx !== -1) {
       memoryActiveKeys.splice(idx, 1);
       return true;
@@ -140,10 +172,10 @@ export async function setDeviceBinding(key: string, device: string): Promise<voi
 }
 
 // 4. Verification Logs
-export async function getVerificationLogs(): Promise<any[]> {
+export async function getVerificationLogs(): Promise<VerificationLog[]> {
   if (redis) {
     try {
-      const list = await redis.lrange("pc:verification_logs", 0, -1);
+      const list = await redis.lrange<VerificationLog>("pc:verification_logs", 0, -1);
       return list || [];
     } catch (e) {
       console.error("[Store] Redis getVerificationLogs error, falling back to memory:", e);
@@ -153,7 +185,7 @@ export async function getVerificationLogs(): Promise<any[]> {
   return memoryVerificationLogs;
 }
 
-export async function addVerificationLog(log: any): Promise<void> {
+export async function addVerificationLog(log: VerificationLog): Promise<void> {
   if (redis) {
     try {
       await redis.lpush("pc:verification_logs", log);
@@ -249,17 +281,13 @@ export async function checkRateLimit(ip: string, limit: number, windowSec: numbe
       return count <= limit;
     } catch (e) {
       console.error("[RateLimit] Redis error:", e);
-      return true; // fail-open in case of Redis error
+      return false; // fail-closed: deny on Redis error to prevent bypass
     }
   } else {
-    // In-memory simple rate limit (just sliding array)
-    if (!(global as any)._rlMemoryStore) {
-      (global as any)._rlMemoryStore = {};
-    }
-    let logs = (global as any)._rlMemoryStore[key] || [];
-    logs = logs.filter((t: number) => t > now - windowMs);
-    logs.push(now);
-    (global as any)._rlMemoryStore[key] = logs;
-    return logs.length <= limit;
+    let timestamps = memoryRateLimits.get(key) || [];
+    timestamps = timestamps.filter((t) => t > now - windowMs);
+    timestamps.push(now);
+    memoryRateLimits.set(key, timestamps);
+    return timestamps.length <= limit;
   }
 }

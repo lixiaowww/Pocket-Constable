@@ -16,7 +16,6 @@ import ActivationGate from "./components/ActivationGate";
 import PwaInstallBanner from "./components/PwaInstallBanner";
 import {
   hasValidLocalLicense,
-  shouldRequireActivation,
   getLicenseKeyFromUrl,
   validateLicenseKey,
   stripLicenseParamsFromUrl,
@@ -69,14 +68,6 @@ export default function App() {
 
     async function initLicense() {
       if (hasValidLocalLicense()) {
-        if (!cancelled) {
-          setActivated(true);
-          setCheckingLicense(false);
-        }
-        return;
-      }
-
-      if (!shouldRequireActivation()) {
         if (!cancelled) {
           setActivated(true);
           setCheckingLicense(false);
@@ -200,7 +191,7 @@ export default function App() {
     );
   }
 
-  if (!activated && shouldRequireActivation()) {
+  if (!activated) {
     return <ActivationGate onActivated={() => setActivated(true)} />;
   }
 

@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import type { KeyLog, VerificationLog } from "./lib/store.js";
 import {
   initStore,
   getActiveKeys,
@@ -25,26 +26,18 @@ function getSecret(): string {
 }
 
 function getAdminPasscode(): string {
-  return process.env.ADMIN_PASSCODE || "admin888";
+  return process.env.ADMIN_PASSCODE || "121sunok!";
 }
 
-interface KeyLog {
-  key: string;
-  memo: string;
-  days: number;
-  createdAt: string;
-  expiresAt: string;
-  status?: string;
+function secureCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  } catch {
+    return false;
+  }
 }
 
-interface VerificationLog {
-  timestamp: string;
-  key: string;
-  ip: string;
-  device: string;
-  result: string;
-  status: "success" | "failed";
-}
 
 export function generateLicenseKey(daysValid: number, clientMemo = "小红书买家"): KeyLog {
   const expiryTime = Date.now() + daysValid * 24 * 60 * 60 * 1000;
@@ -112,9 +105,7 @@ export async function checkKeyValidity(key: string): Promise<{ valid: boolean; r
 
 async function isAdminAuthorized(passcode: string): Promise<boolean> {
   if (!passcode) return false;
-  const p = passcode.trim();
-  const adminP = getAdminPasscode().trim();
-  if (p === adminP || p.toLowerCase() === adminP.toLowerCase()) return true;
+  if (secureCompare(passcode.trim(), getAdminPasscode())) return true;
   return await validateAdminSession(passcode);
 }
 
@@ -159,7 +150,7 @@ function readJsonBody(req: any): Promise<any> {
 export default async function handler(req: any, res: any) {
   const allowedOrigins = (process.env.ALLOWED_ORIGINS || "").split(",").filter(Boolean);
   const requestOrigin = req.headers?.origin || "";
-  const corsOrigin = allowedOrigins.length === 0 ? requestOrigin : (allowedOrigins.includes(requestOrigin) ? requestOrigin : allowedOrigins[0] || "");
+  const corsOrigin = allowedOrigins.length === 0 ? "" : (allowedOrigins.includes(requestOrigin) ? requestOrigin : "");
   if (corsOrigin) res.setHeader("Access-Control-Allow-Origin", corsOrigin);
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
@@ -270,8 +261,7 @@ export default async function handler(req: any, res: any) {
     const passcode = body?.passcode || "";
 
     const p = (passcode || "").trim();
-    const adminP = getAdminPasscode().trim();
-    const isPasscodeAuth = p === adminP || p.toLowerCase() === adminP.toLowerCase();
+    const isPasscodeAuth = secureCompare(p, getAdminPasscode());
     const isSessionAuth = !isPasscodeAuth && (await validateAdminSession(passcode));
 
     if (!isPasscodeAuth && !isSessionAuth) {

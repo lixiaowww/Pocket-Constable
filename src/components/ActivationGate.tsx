@@ -42,7 +42,7 @@ export default function ActivationGate({ onActivated }: ActivationGateProps) {
           </div>
           <h1 className="text-2xl font-serif font-black tracking-tight">遇袭维权锦囊</h1>
           <p className="text-xs font-mono tracking-widest uppercase text-stone-500">
-            安卓版 · PWA 激活
+            iOS · 安卓 · 全平台激活
           </p>
         </div>
 
