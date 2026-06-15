@@ -172,6 +172,11 @@ export default function EmergencySection({
                 >
                   立即下载 .webm 录音文件
                 </a>
+                <audio 
+                  src={audioUrl} 
+                  controls 
+                  className="w-full mt-2.5 h-8 rounded-sm bg-white border border-emerald-300"
+                />
               </div>
             )}
 

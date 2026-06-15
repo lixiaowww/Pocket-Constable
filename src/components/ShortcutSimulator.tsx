@@ -127,6 +127,11 @@ export default function ShortcutSimulator({
             >
               点击下载加密录音至本地
             </a>
+            <audio 
+              src={audioUrl} 
+              controls 
+              className="w-full mt-2.5 h-7 rounded-sm bg-white border border-emerald-300"
+            />
             <p className="text-[8px] text-emerald-700 mt-2 leading-tight text-center opacity-70">
               提示：音频仅存在于当前浏览器内存中，刷新页面将永久消失，请立即保存。
             </p>
