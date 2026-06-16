@@ -347,10 +347,10 @@ export default function App() {
         </div>
 
         {/* Main Grid: Left is Simulator, Right is Details Panel */}
-        <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Left Column: Mobile Simulator View (Span 4 on large screen, first order) */}
-          <div className="lg:col-span-4 lg:sticky lg:top-6 order-2 lg:order-1">
+        <main className={`grid gap-8 items-start ${activeStage === ActiveStage.EMERGENCY ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'}`}>
+
+          {/* Left Column: iPhone Simulator — hidden on emergency stage (has its own full recording UI) */}
+          <div className={`lg:col-span-4 lg:sticky lg:top-6 order-2 lg:order-1 ${activeStage === ActiveStage.EMERGENCY ? 'hidden' : ''}`}>
             <div className="text-center mb-3 lg:hidden">
               <span className="text-xs font-mono tracking-widest uppercase opacity-50">↓ 苹果快捷指令 iOS 运行环境模拟 ↓</span>
             </div>
@@ -371,8 +371,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* Right Column: Detailed guides sheets (Span 8 on large screen) */}
-          <div className="lg:col-span-8 space-y-8 order-1 lg:order-2">
+          {/* Right Column: Detailed guides sheets (Span 8 on large screen, full width on emergency) */}
+          <div className={`space-y-8 order-1 lg:order-2 ${activeStage === ActiveStage.EMERGENCY ? 'col-span-1' : 'lg:col-span-8'}`}>
             
             {/* Navigative top tabs - Responsive Editorial Design with horizontal scroll */}
             <div className="flex flex-row overflow-x-auto gap-1 bg-white p-1.5 border border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] no-scrollbar shrink-0">
