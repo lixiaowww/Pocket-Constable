@@ -68,4 +68,4 @@ export const HOSPITAL_ITEMS: HospitalItem[] = [
 ];
 
 export const SAMPLE_SHORTCUT_CODE = "shortcuts://import-share?id=security_rights_navigator_v3";
-export const REAL_SHORTCUT_I_CLOUD_LINK = "https://www.icloud.com/shortcuts/6bf9fc85a9754f76b9ee08316dfa99b4";
+export const REAL_SHORTCUT_I_CLOUD_LINK = "https://www.icloud.com/shortcuts/2c28a926149c45d7a315092ed53070f2";
