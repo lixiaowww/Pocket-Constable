@@ -46,6 +46,7 @@ export default function App() {
   const [screenDimmed, setScreenDimmed] = useState<boolean>(false);
   const [activated, setActivated] = useState(false);
   const [checkingLicense, setCheckingLicense] = useState(true);
+  const [isAdminMode, setIsAdminMode] = useState(false);
   const [recorder, setRecorder] = useState<MediaRecorder | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [emergencyModeActive, setEmergencyModeActive] = useState<boolean>(false);
@@ -67,6 +68,19 @@ export default function App() {
     let cancelled = false;
 
     async function initLicense() {
+      // Admin URL bypass: skip activation gate, go straight to admin console
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("admin") === "true") {
+        if (!cancelled) {
+          setIsAdminMode(true);
+          setShowAdminTab(true);
+          setActiveStage(ActiveStage.ADMIN);
+          setActivated(true);
+          setCheckingLicense(false);
+        }
+        return;
+      }
+
       if (hasValidLocalLicense()) {
         if (!cancelled) {
           setActivated(true);
