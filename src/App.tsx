@@ -126,24 +126,48 @@ export default function App() {
     return () => clearInterval(interval);
   }, [mockRecording]);
 
+  // Apply real brightness reduction on the root element.
+  // Skip in emergency mode — that overlay has its own black background and
+  // needs red text + stop button to remain readable by the user.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (screenDimmed && !emergencyModeActive) {
+      root.style.filter = "brightness(0.06)";
+      root.style.transition = "filter 0.4s ease";
+    } else {
+      root.style.filter = "";
+      root.style.transition = "filter 0.4s ease";
+    }
+    return () => {
+      root.style.filter = "";
+      root.style.transition = "";
+    };
+  }, [screenDimmed, emergencyModeActive]);
+
   const triggerMockRecording = async () => {
     if (!mockRecording) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Auto-detect best supported audio format (iOS Safari doesn't support webm)
-        const mimeTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac", ""];
+        // iOS must use mp4 — newer iOS (16+) falsely reports webm as supported
+        // but produces unplayable files. Force mp4 on all Apple devices.
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+        const mimeTypes = isIOS
+          ? ["audio/mp4", "audio/aac", ""]
+          : ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", ""];
         const mimeType = mimeTypes.find(t => !t || MediaRecorder.isTypeSupported(t)) || "";
-        setAudioMimeType(mimeType);
+        setAudioMimeType(mimeType || (isIOS ? "audio/mp4" : "audio/webm"));
         const options: MediaRecorderOptions = mimeType ? { mimeType } : {};
         const mediaRecorder = new MediaRecorder(stream, options);
         const chunks: Blob[] = [];
-        
+
         mediaRecorder.ondataavailable = (e) => {
           if (e.data.size > 0) chunks.push(e.data);
         };
-        
+
         mediaRecorder.onstop = () => {
-          const blob = new Blob(chunks, { type: mimeType || "audio/webm" });
+          const effectiveMime = mimeType || (isIOS ? "audio/mp4" : "audio/webm");
+          const blob = new Blob(chunks, { type: effectiveMime });
           const url = URL.createObjectURL(blob);
           setAudioUrl(url);
           // Stop all tracks to release the microphone
