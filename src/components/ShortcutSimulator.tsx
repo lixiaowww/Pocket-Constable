@@ -24,6 +24,7 @@ interface ShortcutSimulatorProps {
   recordingSeconds: number;
   triggerMockRecording: () => void;
   audioUrl: string | null;
+  audioMimeType: string;
 }
 
 export default function ShortcutSimulator({
@@ -33,6 +34,7 @@ export default function ShortcutSimulator({
   recordingSeconds,
   triggerMockRecording,
   audioUrl,
+  audioMimeType,
 }: ShortcutSimulatorProps) {
   // Format seconds to mm:ss
   const formatTime = (secs: number) => {
@@ -121,8 +123,8 @@ export default function ShortcutSimulator({
               <span className="text-[9px] font-mono text-emerald-600 bg-white px-1 border border-emerald-200 uppercase">无痕保存</span>
             </div>
             <a 
-              href={audioUrl} 
-              download={`遇袭证据_${new Date().toISOString().slice(0,10)}_${new Date().toTimeString().slice(0,5).replace(':','-')}.webm`}
+              href={audioUrl}
+              download={(() => { const ext = audioMimeType.includes("mp4") ? "mp4" : audioMimeType.includes("aac") ? "aac" : "webm"; return `遇袭取证_${new Date().toISOString().slice(0,10)}.${ext}`; })()}
               className="block w-full text-center py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-sm transition cursor-pointer font-mono"
             >
               点击下载加密录音至本地

@@ -17,7 +17,7 @@ import {
   Lightbulb,
   ExternalLink
 } from "lucide-react";
-import { formatTime } from "../lib/utils";
+import { formatTime, getAudioExtension, getEvidenceFilename } from "../lib/utils";
 
 interface EmergencySectionProps {
   mockRecording: boolean;
@@ -26,6 +26,7 @@ interface EmergencySectionProps {
   screenDimmed: boolean;
   toggleScreenDim: () => void;
   audioUrl: string | null;
+  audioMimeType: string;
 }
 
 export default function EmergencySection({
@@ -35,6 +36,7 @@ export default function EmergencySection({
   screenDimmed,
   toggleScreenDim,
   audioUrl,
+  audioMimeType,
 }: EmergencySectionProps) {
   // We'll use the universal recorder from props now, but keep fallback logic
   const useRealRecorder = true; 
@@ -160,28 +162,49 @@ export default function EmergencySection({
             </div>
             
             {audioUrl && !activeRecording && (
-              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-300 rounded-sm animate-fadeIn">
-                <div className="flex items-center gap-2 mb-2 text-emerald-800">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span className="text-xs font-bold font-serif">音频证据已锁定 (仅限本次会话)</span>
+              <div className="mt-4 space-y-3 animate-fadeIn">
+                {/* Audio preview */}
+                <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-sm">
+                  <div className="flex items-center gap-2 mb-2 text-emerald-800">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span className="text-xs font-bold font-serif">取证录音已就绪 · 请立即保存</span>
+                  </div>
+                  <audio
+                    src={audioUrl}
+                    controls
+                    className="w-full h-8 rounded-sm bg-white border border-emerald-300"
+                  />
+                  <a
+                    href={audioUrl}
+                    download={getEvidenceFilename(audioMimeType)}
+                    className="mt-2 block w-full text-center py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-sm transition cursor-pointer font-mono"
+                  >
+                    立即保存录音文件 (.{getAudioExtension(audioMimeType)})
+                  </a>
                 </div>
-                <a 
-                  href={audioUrl} 
-                  download={`遇袭证据_${new Date().toISOString().slice(0,10)}.webm`}
-                  className="block w-full text-center py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-sm transition cursor-pointer font-mono"
-                >
-                  立即下载 .webm 录音文件
-                </a>
-                <audio 
-                  src={audioUrl} 
-                  controls 
-                  className="w-full mt-2.5 h-8 rounded-sm bg-white border border-emerald-300"
-                />
-              </div>
-            )}
 
-            {useRealRecorder && (
-              <p className="text-[9px] text-stone-500 mt-1">停止录音后将自动下载 .webm 文件到手机</p>
+                {/* Where to find + how to submit to police */}
+                <div className="p-3 bg-amber-50 border border-amber-300 rounded-sm text-[11px] text-amber-950 space-y-2.5 leading-relaxed">
+                  <p className="font-bold text-amber-900 font-serif flex items-center gap-1.5">
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                    文件保存位置 & 如何提交给警方
+                  </p>
+                  <div className="space-y-2">
+                    <div className="bg-white/70 border border-amber-200 p-2 rounded-sm">
+                      <p className="font-bold mb-0.5">📱 iPhone（Safari）</p>
+                      <p>点击保存后会弹出分享菜单 → 选「存储到文件」→ 文件保存至<strong>「文件」App → 下载</strong>文件夹。</p>
+                      <p className="mt-1">提交给警方：在文件 App 长按文件 → 「共享」→ <strong>AirDrop 给警方手机</strong>，或发送至<strong>微信文件传输助手</strong>备份后出示。</p>
+                    </div>
+                    <div className="bg-white/70 border border-amber-200 p-2 rounded-sm">
+                      <p className="font-bold mb-0.5">🤖 安卓（Chrome）</p>
+                      <p>文件自动下载至<strong>手机「下载」文件夹</strong>，可通过系统文件管理器找到，直接用微信发送给警方或自己备份。</p>
+                    </div>
+                    <p className="text-[10px] text-amber-800 border-t border-amber-200 pt-2">
+                      ⚠️ 关闭或刷新页面后录音将从内存中消失，无法找回。请在离开页面前务必保存。
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
 
             <div className="mt-3 pt-2 border-t border-black/10 text-[9px] text-amber-800 leading-normal font-sans">

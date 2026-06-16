@@ -49,6 +49,7 @@ export default function App() {
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [recorder, setRecorder] = useState<MediaRecorder | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioMimeType, setAudioMimeType] = useState<string>("");
   const [emergencyModeActive, setEmergencyModeActive] = useState<boolean>(false);
   const [showAdminTab, setShowAdminTab] = useState(false);
 
@@ -132,6 +133,7 @@ export default function App() {
         // Auto-detect best supported audio format (iOS Safari doesn't support webm)
         const mimeTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac", ""];
         const mimeType = mimeTypes.find(t => !t || MediaRecorder.isTypeSupported(t)) || "";
+        setAudioMimeType(mimeType);
         const options: MediaRecorderOptions = mimeType ? { mimeType } : {};
         const mediaRecorder = new MediaRecorder(stream, options);
         const chunks: Blob[] = [];
@@ -362,6 +364,7 @@ export default function App() {
               recordingSeconds={recordingSeconds}
               triggerMockRecording={triggerMockRecording}
               audioUrl={audioUrl}
+              audioMimeType={audioMimeType}
             />
             
             {/* Small widget note under the phone */}
@@ -469,6 +472,7 @@ export default function App() {
                   screenDimmed={screenDimmed}
                   toggleScreenDim={() => setScreenDimmed(!screenDimmed)}
                   audioUrl={audioUrl}
+                  audioMimeType={audioMimeType}
                 />
               )}
 
